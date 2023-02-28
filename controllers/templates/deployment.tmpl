@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .ObjectMeta.Name }}
+  namespace: {{.Spec.NameSpace}}
+  labels:
+    app: {{ .ObjectMeta.Name }}
+spec:
+  replicas: {{ .Spec.Replicas }}
+  template:
+    metadata:
+      name: {{ .ObjectMeta.Name }}
+      labels:
+        app: {{ .ObjectMeta.Name }}
+    spec:
+      containers:
+        - name: {{ .ObjectMeta.Name }}
+          image: {{ .Spec.Image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Spec.Port }}
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: {{ .ObjectMeta.Name }}

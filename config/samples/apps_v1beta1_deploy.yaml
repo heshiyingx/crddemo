@@ -1,0 +1,23 @@
+apiVersion: apps.myshuju.top/v1beta1
+kind: Deploy
+metadata:
+  labels:
+    app.kubernetes.io/name: deploy
+    app.kubernetes.io/instance: deploy-sample
+    app.kubernetes.io/part-of: devops
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: devops
+  name: deploy-sample
+  namespace: default
+spec:
+  image: nginx
+  replicas: 2
+  port: 80
+  nameSpace: default
+  expose:
+    mode: ingress
+    nodePort: 30001
+    ingressDomain: test.myshuju.top
+    path: /
+
+
