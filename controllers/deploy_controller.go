@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	devopsAppsV1Beta1 "gitlab.myshuju.top/heshiying/devops/api/v1beta1"
@@ -134,12 +135,20 @@ func (r *DeployReconciler) createDeployment(ctx context.Context, req ctrl.Reques
 	if err != nil {
 		return err
 	}
+	err = controllerutil.SetControllerReference(deploy, deployment, r.Scheme)
+	if err != nil {
+		return err
+	}
 	return r.Client.Create(ctx, deployment)
 
 }
 
 func (r *DeployReconciler) updateDeployment(ctx context.Context, req ctrl.Request, deploy *devopsAppsV1Beta1.Deploy, logger logr.Logger) error {
 	deployment, err := NewDeployment(deploy)
+	if err != nil {
+		return err
+	}
+	err = controllerutil.SetControllerReference(deploy, deployment, r.Scheme)
 	if err != nil {
 		return err
 	}
@@ -151,11 +160,19 @@ func (r *DeployReconciler) createService(ctx context.Context, req ctrl.Request, 
 	if err != nil {
 		return err
 	}
+	err = controllerutil.SetControllerReference(deploy, service, r.Scheme)
+	if err != nil {
+		return err
+	}
 	return r.Client.Create(ctx, service)
 }
 
 func (r *DeployReconciler) updateService(ctx context.Context, req ctrl.Request, deploy *devopsAppsV1Beta1.Deploy, mode devopsAppsV1Beta1.ExposeMode, logger logr.Logger) error {
 	service, err := NewService(deploy)
+	if err != nil {
+		return err
+	}
+	err = controllerutil.SetControllerReference(deploy, service, r.Scheme)
 	if err != nil {
 		return err
 	}
@@ -168,6 +185,10 @@ func (r *DeployReconciler) ingressNotExistDeal(ctx context.Context, name types.N
 	}
 	if mode == devopsAppsV1Beta1.ExposeModeIngress {
 		ingress, err := NewIngress(deploy)
+		if err != nil {
+			return err
+		}
+		err = controllerutil.SetControllerReference(deploy, ingress, r.Scheme)
 		if err != nil {
 			return err
 		}
@@ -184,6 +205,10 @@ func (r *DeployReconciler) ingressExistDeal(ctx context.Context, ingress *networ
 	}
 	if mode == devopsAppsV1Beta1.ExposeModeIngress {
 		newIngress, err := NewIngress(deploy)
+		if err != nil {
+			return err
+		}
+		err = controllerutil.SetControllerReference(deploy, newIngress, r.Scheme)
 		if err != nil {
 			return err
 		}
