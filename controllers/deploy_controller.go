@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -54,6 +55,7 @@ type DeployReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *DeployReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx, "Deploy", req.NamespacedName)
+	logger.Info("Deploy change")
 
 	// TODO(user): your logic here
 	// 1处理资源
@@ -80,7 +82,8 @@ func (r *DeployReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 
 	} else {
-		err = r.updateDeployment(ctx, req, deployCopy, logger)
+
+		err = r.updateDeployment(ctx, req, deployCopy, deployment, logger)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -99,7 +102,7 @@ func (r *DeployReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{}, err
 		}
 	} else {
-		if err := r.updateService(ctx, req, deployCopy, deployCopy.Spec.Expose.Mode, logger); err != nil {
+		if err := r.updateService(ctx, req, deployCopy, deployCopy.Spec.Expose.Mode, service, logger); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -127,6 +130,9 @@ func (r *DeployReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 func (r *DeployReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&devopsAppsV1Beta1.Deploy{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.Service{}).
+		Owns(&networkingv1.Ingress{}).
 		Complete(r)
 }
 
@@ -143,10 +149,17 @@ func (r *DeployReconciler) createDeployment(ctx context.Context, req ctrl.Reques
 
 }
 
-func (r *DeployReconciler) updateDeployment(ctx context.Context, req ctrl.Request, deploy *devopsAppsV1Beta1.Deploy, logger logr.Logger) error {
+func (r *DeployReconciler) updateDeployment(ctx context.Context, req ctrl.Request, deploy *devopsAppsV1Beta1.Deploy, oldDeployment appsv1.Deployment, logger logr.Logger) error {
 	deployment, err := NewDeployment(deploy)
 	if err != nil {
 		return err
+	}
+	err = r.Client.Update(ctx, deployment, client.DryRunAll)
+	if err != nil {
+		return err
+	}
+	if reflect.DeepEqual(deployment.Spec, oldDeployment.Spec) {
+		return nil
 	}
 	err = controllerutil.SetControllerReference(deploy, deployment, r.Scheme)
 	if err != nil {
@@ -167,10 +180,17 @@ func (r *DeployReconciler) createService(ctx context.Context, req ctrl.Request, 
 	return r.Client.Create(ctx, service)
 }
 
-func (r *DeployReconciler) updateService(ctx context.Context, req ctrl.Request, deploy *devopsAppsV1Beta1.Deploy, mode devopsAppsV1Beta1.ExposeMode, logger logr.Logger) error {
+func (r *DeployReconciler) updateService(ctx context.Context, req ctrl.Request, deploy *devopsAppsV1Beta1.Deploy, mode devopsAppsV1Beta1.ExposeMode, oldService corev1.Service, logger logr.Logger) error {
 	service, err := NewService(deploy)
 	if err != nil {
 		return err
+	}
+	err = r.Client.Update(ctx, service, client.DryRunAll)
+	if err != nil {
+		return err
+	}
+	if reflect.DeepEqual(service.Spec, oldService.Spec) {
+		return nil
 	}
 	err = controllerutil.SetControllerReference(deploy, service, r.Scheme)
 	if err != nil {
@@ -207,6 +227,13 @@ func (r *DeployReconciler) ingressExistDeal(ctx context.Context, ingress *networ
 		newIngress, err := NewIngress(deploy)
 		if err != nil {
 			return err
+		}
+		err = r.Client.Update(ctx, newIngress, client.DryRunAll)
+		if err != nil {
+			return err
+		}
+		if reflect.DeepEqual(ingress.Spec, newIngress.Spec) {
+			return nil
 		}
 		err = controllerutil.SetControllerReference(deploy, newIngress, r.Scheme)
 		if err != nil {
