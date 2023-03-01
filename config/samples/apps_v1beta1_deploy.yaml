@@ -8,16 +8,15 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: devops
   name: deploy-sample
-  namespace: default
+  namespace: mall-team
 spec:
   image: nginx
-  replicas: 2
+  replicas: 1
   port: 80
-  nameSpace: default
   expose:
     mode: ingress
     nodePort: 30001
-    ingressDomain: test.myshuju.top
+    ingressDomain: test1.myshuju.top
     path: /
 
 

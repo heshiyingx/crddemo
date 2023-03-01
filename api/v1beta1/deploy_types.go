@@ -37,8 +37,6 @@ type DeploySpec struct {
 	Environments []corev1.EnvVar `json:"environments,omitempty"`
 	// service要暴露的端口
 	Expose *Expose `json:"expose"`
-	// 命名空间
-	NameSpace string `json:"nameSpace,omitempty"`
 	// service和container端口
 	Port int32 `json:"port,omitempty"`
 }

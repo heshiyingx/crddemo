@@ -170,9 +170,6 @@ spec:
               image:
                 description: 镜像地址
                 type: string
-              nameSpace:
-                description: 命名空间
-                type: string
               port:
                 description: service和container端口
                 format: int32

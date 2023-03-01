@@ -165,6 +165,7 @@ func (r *DeployReconciler) updateDeployment(ctx context.Context, req ctrl.Reques
 	if err != nil {
 		return err
 	}
+
 	return r.Client.Update(ctx, deployment)
 }
 
