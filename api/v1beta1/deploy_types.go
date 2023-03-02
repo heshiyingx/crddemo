@@ -73,6 +73,8 @@ type DeployStatus struct {
 	Message    string      `json:"message,omitempty"`
 	Reason     string      `json:"reason,omitempty"`
 	Conditions []Condition `json:"conditions,omitempty"`
+	Replicas   int32       `json:"replicas,omitempty"`
+	Selector   string      `json:"selector,omitempty"` // this must be the string form of the selector
 }
 
 type Condition struct {
@@ -90,14 +92,14 @@ type Condition struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
 
 // Deploy is the Schema for the deploys API
 type Deploy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   DeploySpec   `json:"spec,omitempty"`
-	Status DeployStatus `json:"status,omitempty"`
+	Spec              DeploySpec   `json:"spec,omitempty"`
+	Status            DeployStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
