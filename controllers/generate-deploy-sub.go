@@ -12,8 +12,8 @@ import (
 )
 
 func parseTemplate(tmplName string, md *devopsAppsV1Beta1.Deploy) []byte {
-	tmpl, err := template.ParseFiles(fmt.Sprintf("controllers/templates/%s", tmplName))
-	//tmpl, err := template.ParseFiles(fmt.Sprintf("templates/%s", tmplName))
+	//tmpl, err := template.ParseFiles(fmt.Sprintf("/templates/%s", tmplName))
+	tmpl, err := template.ParseFiles(fmt.Sprintf("templates/%s", tmplName))
 	if err != nil {
 		panic(err)
 	}
