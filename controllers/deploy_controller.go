@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"github.com/go-logr/logr"
+	devopsAppsV1Beta1 "gitlab.myshuju.top/heshiying/devops/api/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -30,8 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	devopsAppsV1Beta1 "gitlab.myshuju.top/heshiying/devops/api/v1beta1"
 )
 
 // DeployReconciler reconciles a Deploy object
@@ -125,8 +124,8 @@ func (r *DeployReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 		}
 	}
-
-	return ctrl.Result{}, nil
+	err := r.updateStatus(ctx, deployCopy, deployment.DeepCopy())
+	return ctrl.Result{}, err
 }
 
 // SetupWithManager sets up the controller with the Manager.
