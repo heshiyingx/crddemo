@@ -18,7 +18,7 @@ func (r *DeployReconciler) updateStatus(ctx context.Context, deploy *devopsv1bet
 	deploy.Status.Selector = selector.String()
 
 	if deployment.Spec.Replicas != nil {
-		deploy.Status.Replicas = *deployment.Spec.Replicas
+		deploy.Status.Replicas = deployment.Status.ReadyReplicas
 	}
 	return r.Client.Status().Update(ctx, deploy)
 }
