@@ -57,7 +57,6 @@ type DeployReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *DeployReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx, "Deploy", req.NamespacedName)
-	logger.Info("Deploy change")
 
 	// TODO(user): your logic here
 	// 1处理资源
@@ -76,6 +75,7 @@ func (r *DeployReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if errors.IsNotFound(err) {
 			err = r.createDeployment(ctx, req, deployCopy, logger)
 			if err != nil {
+				logger.Error(err, "createDeployment err")
 				return ctrl.Result{}, err
 			}
 		} else {
@@ -87,6 +87,7 @@ func (r *DeployReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 		err = r.updateDeployment(ctx, req, deployCopy, deployment, logger)
 		if err != nil {
+			logger.Error(err, "updateDeployment err")
 			return ctrl.Result{}, err
 		}
 	}
@@ -97,6 +98,7 @@ func (r *DeployReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err := r.Client.Get(ctx, req.NamespacedName, &service); err != nil {
 		if errors.IsNotFound(err) {
 			if err := r.createService(ctx, req, deployCopy, logger); err != nil {
+				logger.Error(err, "createService err")
 				return ctrl.Result{}, err
 			}
 		} else {
@@ -105,6 +107,7 @@ func (r *DeployReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	} else {
 		if err := r.updateService(ctx, req, deployCopy, deployCopy.Spec.Expose.Mode, service, logger); err != nil {
+			logger.Error(err, "updateService err")
 			return ctrl.Result{}, err
 		}
 	}
@@ -116,15 +119,20 @@ func (r *DeployReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err := r.Client.Get(ctx, req.NamespacedName, &ingress); err != nil {
 		if errors.IsNotFound(err) {
 			if err = r.ingressNotExistDeal(ctx, req.NamespacedName, deployCopy, deployCopy.Spec.Expose.Mode, logger); err != nil {
+				logger.Error(err, "ingressNotExistDeal err")
 				return ctrl.Result{}, err
 			}
 		} else {
 			if err = r.ingressExistDeal(ctx, &ingress, deployCopy, deployCopy.Spec.Expose.Mode, logger); err != nil {
+				logger.Error(err, "ingressExistDeal err")
 				return ctrl.Result{}, err
 			}
 		}
 	}
-	err := r.updateStatus(ctx, deployCopy, deployment.DeepCopy())
+	err := r.updateStatus(ctx, req, deployment.DeepCopy())
+	if err != nil {
+		logger.Error(err, "updateStatus err")
+	}
 	return ctrl.Result{}, err
 }
 
