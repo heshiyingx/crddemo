@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-logr/logr"
 	devopsAppsV1Beta1 "gitlab.myshuju.top/heshiying/devops/api/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -116,20 +117,22 @@ func (r *DeployReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// >>如果mode是ingress,如果不存在，创建ingress，如果存在更新ingress
 	// >>如果mode是nodePort,如果存在，则删除。
 	ingress := networkingv1.Ingress{}
-	if err := r.Client.Get(ctx, req.NamespacedName, &ingress); err != nil {
+	err := r.Client.Get(ctx, req.NamespacedName, &ingress)
+	if err != nil {
+		fmt.Println(err)
 		if errors.IsNotFound(err) {
 			if err = r.ingressNotExistDeal(ctx, req.NamespacedName, deployCopy, deployCopy.Spec.Expose.Mode, logger); err != nil {
 				logger.Error(err, "ingressNotExistDeal err")
 				return ctrl.Result{}, err
 			}
-		} else {
-			if err = r.ingressExistDeal(ctx, &ingress, deployCopy, deployCopy.Spec.Expose.Mode, logger); err != nil {
-				logger.Error(err, "ingressExistDeal err")
-				return ctrl.Result{}, err
-			}
+		}
+	} else {
+		if err = r.ingressExistDeal(ctx, &ingress, deployCopy, deployCopy.Spec.Expose.Mode, logger); err != nil {
+			logger.Error(err, "ingressExistDeal err")
+			return ctrl.Result{}, err
 		}
 	}
-	err := r.updateStatus(ctx, req, deployment.DeepCopy())
+	err = r.updateStatus(ctx, req, deployment.DeepCopy())
 	if err != nil {
 		logger.Error(err, "updateStatus err")
 	}
@@ -231,7 +234,10 @@ func (r *DeployReconciler) ingressNotExistDeal(ctx context.Context, name types.N
 func (r *DeployReconciler) ingressExistDeal(ctx context.Context, ingress *networkingv1.Ingress, deploy *devopsAppsV1Beta1.Deploy, mode devopsAppsV1Beta1.ExposeMode, logger logr.Logger) error {
 	// 如果是nodePort就删除原有的ingress
 	if mode == devopsAppsV1Beta1.ExposeModeNodePort {
-		r.Client.DeleteAllOf(ctx, ingress)
+		err := r.Client.Delete(ctx, ingress)
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 	if mode == devopsAppsV1Beta1.ExposeModeIngress {
